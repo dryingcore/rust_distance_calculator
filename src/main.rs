@@ -1,3 +1,4 @@
+use geoutils::Location;
 use std::env;
 
 #[derive(Clone)]
@@ -10,7 +11,6 @@ struct City {
 
 fn main() {
     let arguments: Vec<String> = env::args().collect();
-    dbg!(&arguments);
 
     println!(" -- Alone Traveller --");
 
@@ -18,11 +18,44 @@ fn main() {
         panic!("You must provide a origin and a destination!");
     }
 
-    let origin_city = city_lookup(&arguments[1]).unwrap();
-    println!("Origin city entered: {0}", origin_city.name);
+    let origin_city: City;
 
-    let destination_city = city_lookup(&arguments[2]).unwrap();
-    println!("Destination city entered: {0}", destination_city.name);
+    if let Some(city) = city_lookup(&arguments[1]) {
+        origin_city = city;
+        println!("Origin city entered: {0}", origin_city.name);
+    } else {
+        println!(
+            "No Origin or a invalid origin Has been Provided by User. -----> {}",
+            &arguments[1]
+        );
+        std::process::exit(-1);
+    }
+
+    let destination_city: City;
+
+    if let Some(city) = city_lookup(&arguments[2]) {
+        destination_city = city;
+        println!("Destination city entered: {0}", destination_city.name);
+    } else {
+        println!(
+            "No Origin or a invalid origin Has been Provided by User. -----> {}",
+            &arguments[2]
+        );
+        std::process::exit(-1);
+    }
+
+    let distance = calculate_distance(
+        origin_city.lat,
+        origin_city.lon,
+        destination_city.lat,
+        destination_city.lon,
+    );
+
+    println!(
+        "The distance below these two points are: {:.2} KM",
+        distance
+    );
+    std::process::exit(0);
 }
 
 fn city_lookup(code: &str) -> Option<City> {
@@ -65,10 +98,16 @@ fn city_lookup(code: &str) -> Option<City> {
         },
     ];
 
-    let result = cities.iter().find(| city | city.code == code);
+    let result = cities.iter().find(|city| city.code == code);
 
     match result {
         None => None,
-        Some(city) => Some(city.clone())
+        Some(city) => Some(city.clone()),
     }
+}
+
+fn calculate_distance(lat1: f32, lon1: f32, lat2: f32, lon2: f32) -> f64 {
+    let origin = Location::new(lat1, lon1);
+    let destination = Location::new(lat2, lon2);
+    origin.distance_to(&destination).unwrap().meters() / 1000.0
 }
